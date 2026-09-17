@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: rca-postgres
+    environment:
+      POSTGRES_USER: rca
+      POSTGRES_PASSWORD: rca_password
+      POSTGRES_DB: constants
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./app/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  api:
+    build: ./app/api
+    container_name: rca-api
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: constants
+      DB_USER: rca
+      DB_PASSWORD: rca_password
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./tester/results:/app/incident-results
+    depends_on:
+      - postgres
+
+  frontend:
+    build: ./app/frontend
+    container_name: rca-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:

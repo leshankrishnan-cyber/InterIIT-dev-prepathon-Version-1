@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: broken-command
+  namespace: rca
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: broken-command
+  template:
+    metadata:
+      labels:
+        app: broken-command
+    spec:
+      containers:
+        - name: api
+          image: rca-api:latest
+          imagePullPolicy: Never
+          command:
+            - /does/not/exist

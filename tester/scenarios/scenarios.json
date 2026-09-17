@@ -1,0 +1,46 @@
+{
+  "pod_kill": {
+    "type": "chaos",
+    "manifest": "chaos/application/pod-kill.yaml"
+  },
+  "cpu_stress": {
+    "type": "chaos",
+    "manifest": "chaos/resource/cpu-stress.yaml"
+  },
+  "memory_stress": {
+    "type": "chaos",
+    "manifest": "chaos/resource/memory-stress.yaml"
+  },
+  "network_delay": {
+    "type": "chaos",
+    "manifest": "chaos/network/api-delay.yaml"
+  },
+  "network_loss": {
+    "type": "chaos",
+    "manifest": "chaos/network/api-loss.yaml"
+  },
+  "application_crash": {
+    "type": "http",
+    "url": "http://localhost:8000/crash"
+  },
+  "database_crash": {
+    "type": "chaos",
+    "manifest": "chaos/database/postgres-kill.yaml"
+  },
+  "node_failure": {
+    "type": "node",
+    "node": "rca-cluster-worker"
+  },
+  "dns_failure": {
+    "type": "chaos",
+    "manifest": "chaos/network/dns-failure.yaml"
+  },
+  "invalid_image": {
+    "type": "manual",
+    "manifest": "chaos/container/invalid-image.yaml"
+  },
+  "invalid_command": {
+    "type": "manual",
+    "manifest": "chaos/container/invalid-command.yaml"
+  }
+}

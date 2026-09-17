@@ -1,0 +1,16 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: api-memory-stress
+  namespace: rca
+spec:
+  mode: one
+  selector:
+    namespaces:
+      - rca
+    labelSelectors:
+      app: api
+  stressors:
+    memory:
+      workers: 1
+      size: "512MB"

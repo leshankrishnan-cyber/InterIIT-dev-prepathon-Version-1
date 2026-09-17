@@ -1,0 +1,18 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: api-delay
+  namespace: rca
+spec:
+  action: delay
+  mode: one
+  selector:
+    namespaces:
+      - rca
+    labelSelectors:
+      app: api
+  delay:
+    latency: "500ms"
+    correlation: "50"
+    jitter: "100ms"
+  direction: to

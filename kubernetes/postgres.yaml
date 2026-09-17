@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: rca
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: rca
+            - name: POSTGRES_PASSWORD
+              value: rca_password
+            - name: POSTGRES_DB
+              value: constants
+          volumeMounts:
+            - name: postgres-init
+              mountPath: /docker-entrypoint-initdb.d/init.sql
+              subPath: init.sql
+      volumes:
+        - name: postgres-init
+          configMap:
+            name: postgres-init
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  namespace: rca
+data:
+  init.sql: |
+    CREATE TABLE IF NOT EXISTS constants (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(50) UNIQUE NOT NULL,
+        symbol VARCHAR(20),
+        value DOUBLE PRECISION NOT NULL,
+        unit VARCHAR(50),
+        description TEXT
+    );
+
+    INSERT INTO constants (name, symbol, value, unit, description)
+    VALUES
+        ('pi', 'π', 3.141592653589793, 'dimensionless', 'Pi'),
+        ('e', 'e', 2.718281828459045, 'dimensionless', 'Euler''s number'),
+        ('speed_of_light', 'c', 299792458, 'm/s', 'Speed of light in vacuum'),
+        ('gravity', 'g', 9.80665, 'm/s²',
+         'Standard gravitational acceleration')
+    ON CONFLICT (name) DO NOTHING;
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: rca
+spec:
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432

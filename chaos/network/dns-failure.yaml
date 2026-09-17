@@ -1,0 +1,14 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: api-dns-failure
+  namespace: rca
+spec:
+  action: partition
+  mode: one
+  selector:
+    namespaces:
+      - rca
+    labelSelectors:
+      app: api
+  direction: to

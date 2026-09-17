@@ -1,0 +1,15 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: api-cpu-stress
+  namespace: rca
+spec:
+  mode: one
+  selector:
+    namespaces:
+      - rca
+    labelSelectors:
+      app: api
+  stressors:
+    cpu:
+      workers: 2

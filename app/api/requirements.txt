@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+psycopg[binary]
+prometheus-fastapi-instrumentator
+requests
+openai

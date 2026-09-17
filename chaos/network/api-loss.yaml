@@ -1,0 +1,17 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: api-loss
+  namespace: rca
+spec:
+  action: loss
+  mode: one
+  selector:
+    namespaces:
+      - rca
+    labelSelectors:
+      app: api
+  loss:
+    loss: "30"
+    correlation: "50"
+  direction: to
