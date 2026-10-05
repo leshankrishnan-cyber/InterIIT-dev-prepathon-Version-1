@@ -2,7 +2,7 @@
 
 Prototype for investigating Kubernetes incidents using Kubernetes state/events/logs, Prometheus metrics, Chaos Mesh, and an LLM reasoning layer.
 
-(warning : you need your own openai api key for this version (to avoid me exhausting mine), will add one as a secret later)
+(warning : you need your own GEMINI api key for this version (to avoid me exhausting mine))
 
 ## Stack
 
@@ -317,10 +317,10 @@ find tester/results/INC-... -type f
 
 # 10. Configure the LLM
 
-Set the OpenAI API key in the environment used by the API:
+Set the API key in the environment used by the API:
 
 ```
-export OPENAI_API_KEY="your-api-key"
+export GEMINI_KEY="your-api-key"
 ```
 
 For local API development:
@@ -333,27 +333,27 @@ source venv/bin/activate
 
 pip install -r requirements.txt
 
-export OPENAI_API_KEY="your-api-key"
+export GEMINI_KEY="your-api-key"
 
 uvicorn main:app --reload --port 8000
 ```
 
-The current LLM layer expects the OpenAI Python SDK and uses the Responses API.
-
-
 # 11. Incident-aware RCA
 
-The RCA endpoint accepts an incident ID:
+The RCA endpoint accepts a user prompt (the alert or incident description) and an incident ID via a POST request.
 
 ```
-GET /investigate/{incident_id}
-```
+POST /investigate
 
 For example:
 
 ```
-curl \
-  http://localhost:8000/investigate/INC-20260917-214500
+curl -X POST http://localhost:8000/investigate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "incident_id": "INC-20261005-205500",
+    "description": "The checkout service API is experiencing a sudden increase in latency and dropping connections."
+  }'
 ```
 
 The agent loads:
@@ -374,6 +374,7 @@ Expected RCA structure:
 {
   "summary": "...",
   "symptoms": [],
+  "timeline": [],
   "hypotheses": [
     {
       "cause": "...",
@@ -423,38 +424,16 @@ find tester/results \
   -type d
 ```
 
-Then:
+Then trigger the investigation with your prompt (replace with your actual ID):
 
 ```
-curl http://localhost:8000/investigate/INC-XXXXXXXX-XXXXXX
+curl -X POST http://localhost:8000/investigate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "incident_id": "INC-XXXXXXXX-XXXXXX",
+    "description": "The API pod just crashed and restarted unexpectedly."
+  }'
 ```
-
-
-# 13. Docker Compose
-
-The original application can also be started without Kubernetes:
-
-```
-docker compose up --build
-```
-
-Services:
-
-```
-frontend → localhost:3000
-api      → localhost:8000
-postgres → localhost:5432
-```
-
-Stop:
-
-```
-docker compose down
-```
-
-For the RCA/Kubernetes prototype, the kind setup is the primary environment.
-
-
 # Current scope
 
 Implemented:

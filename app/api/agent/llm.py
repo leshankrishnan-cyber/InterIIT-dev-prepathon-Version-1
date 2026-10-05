@@ -32,6 +32,7 @@ When you have enough evidence to reach a conclusion, return a final JSON block m
 {
   "summary": "...",
   "symptoms": ["..."],
+  "timeline": ["..."],
   "hypotheses": [
     {
       "cause": "...",
@@ -45,18 +46,18 @@ When you have enough evidence to reach a conclusion, return a final JSON block m
 }
 """
 
-def analyze_with_llm(incident_id: str, description: str):
+def analyze_with_llm(incident_id: str, description: str, timeline_changes: list):
     config = types.GenerateContentConfig(
         system_instruction=SYSTEM_PROMPT,
         temperature=0.1,
         tools=TOOLS
     )
     
-    # The chats interface automatically handles the iterative tool-calling loop
     chat = client.chats.create(model="gemini-3.8-flash", config=config)
     prompt = (
         f"Incident Alert: {description}\n"
         f"Incident ID: {incident_id}\n"
+        f"State Changes Timeline: {timeline_changes}\n"
         "Investigate the cluster dynamically using your tools to determine the root cause, "
         "and return your findings in the required JSON format."
     )
