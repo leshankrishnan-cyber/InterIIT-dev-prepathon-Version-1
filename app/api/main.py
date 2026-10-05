@@ -80,12 +80,12 @@ def calculate(a: float, b: float):
 def crash():
     os.kill(os.getpid(), signal.SIGKILL)
 
-@app.get("/investigate/{incident_id}")
-def investigate(incident_id: str):
-    try:
-        return investigate_incident(incident_id)
-    except FileNotFoundError:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Incident {incident_id} not found"
-        )
+from pydantic import BaseModel
+
+class IncidentRequest(BaseModel):
+    description: str
+    incident_id: str | None = "manual-incident"
+
+@app.post("/investigate")
+def investigate(req: IncidentRequest):
+    return investigate_incident(incident_id=req.incident_id, description=req.description)

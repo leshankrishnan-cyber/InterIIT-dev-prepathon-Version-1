@@ -13,6 +13,7 @@ spec:
       labels:
         app: api
     spec:
+      serviceAccountName: rca-agent-sa
       containers:
         - name: api
           image: rca-api:latest
@@ -30,6 +31,11 @@ spec:
               value: rca
             - name: DB_PASSWORD
               value: rca_password
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gemini-secret
+                  key: GEMINI_API_KEY 
 
 ---
 apiVersion: v1

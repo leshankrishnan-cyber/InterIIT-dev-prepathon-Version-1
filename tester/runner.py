@@ -103,7 +103,8 @@ def main():
     collect(incident_id, "during")
 
     if scenario["type"] == "chaos":
-        run(f"kubectl delete -f {scenario['manifest']}")
+        #run(f"kubectl delete -f {scenario['manifest']}")
+        pass
     elif scenario["type"] == "node":
         run(f"docker start {scenario['node']}")
 

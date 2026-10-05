@@ -1,65 +1,80 @@
 import json
 import os
+from google import genai
+from google.genai import types
 
-from openai import OpenAI
+from .collector import get_pods, get_pod_logs, get_events, get_deployments
+from .metrics import query as query_prom
 
-client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+# Initialize the Gemini client
+client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
-SYSTEM_PROMPT = """
-You are a Kubernetes root-cause analysis agent.
+def query_prometheus(metric_query: str) -> str:
+    """Queries Prometheus for metrics. Use valid PromQL."""
+    try:
+        result = query_prom(metric_query)
+        # Truncate string response to prevent exceeding context window
+        return str(result)[:2000]
+    except Exception as e:
+        return f"Error: {e}"
 
-Analyze the supplied Kubernetes and Prometheus evidence.
+# Register the Python functions as AI Tools
+TOOLS = [get_pods, get_pod_logs, get_events, get_deployments, query_prometheus]
 
-Your task is to:
-1. Identify observed symptoms.
-2. Generate plausible hypotheses.
-3. Compare each hypothesis against the evidence.
-4. Identify the most likely root cause.
-5. Distinguish root causes from downstream symptoms.
-6. State uncertainty when evidence is insufficient.
+SYSTEM_PROMPT = """You are an autonomous Kubernetes root-cause analysis agent.
+Investigate the cluster dynamically using your tools.
+1. Start by checking pods and events in the 'rca' namespace.
+2. If pods are failing, fetch their logs.
+3. Query metrics to check for resource exhaustion (OOM/CPU) or network/database failures.
+4. Reason about competing hypotheses.
 
-Do not invent evidence.
-
-Return JSON with this structure:
-
+When you have enough evidence to reach a conclusion, return a final JSON block matching this structure exactly (and output nothing else):
 {
   "summary": "...",
-  "symptoms": [],
+  "symptoms": ["..."],
   "hypotheses": [
     {
       "cause": "...",
-      "supporting_evidence": [],
-      "contradicting_evidence": []
+      "supporting_evidence": ["..."],
+      "contradicting_evidence": ["..."]
     }
   ],
   "likely_root_cause": "...",
-  "confidence": "...",
-  "recommended_checks": []
+  "confidence": "High/Medium/Low",
+  "recommended_checks": ["..."]
 }
 """
 
-def analyze_with_llm(incident, changes):
-    prompt = {
-        "incident": incident,
-        "detected_changes": changes
-    }
-
-    response = client.responses.create(
-        model="gpt-5.6",
-        instructions=SYSTEM_PROMPT,
-        input=json.dumps(prompt, indent=2, default=str)
+def analyze_with_llm(incident_id: str, description: str):
+    config = types.GenerateContentConfig(
+        system_instruction=SYSTEM_PROMPT,
+        temperature=0.1,
+        tools=TOOLS
     )
-
-    text = response.output_text
-
+    
+    # The chats interface automatically handles the iterative tool-calling loop
+    chat = client.chats.create(model="gemini-3.8-flash", config=config)
+    prompt = (
+        f"Incident Alert: {description}\n"
+        f"Incident ID: {incident_id}\n"
+        "Investigate the cluster dynamically using your tools to determine the root cause, "
+        "and return your findings in the required JSON format."
+    )
+    
     try:
-        return json.loads(text)
-    except json.JSONDecodeError:
+        response = chat.send_message(prompt)
+        text = response.text.strip()
+        
+        # Clean up markdown formatting if present
+        if text.startswith("```json"):
+            text = text[7:-3]
+        elif text.startswith("```"):
+            text = text[3:-3]
+            
+        return json.loads(text.strip())
+    except Exception as e:
         return {
-            "summary": text,
-            "symptoms": [],
-            "hypotheses": [],
-            "likely_root_cause": "Unable to parse structured response",
-            "confidence": "unknown",
-            "recommended_checks": []
+            "summary": f"Agent failed to complete investigation: {str(e)}",
+            "likely_root_cause": "Unknown",
+            "confidence": "None"
         }

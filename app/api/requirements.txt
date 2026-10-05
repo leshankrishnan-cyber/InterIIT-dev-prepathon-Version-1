@@ -1,6 +1,8 @@
 fastapi
 uvicorn
 psycopg[binary]
+kubernetes
+prometheus-api-client
+google-genai==2.28.0
+python-dotenv==1.2.3
 prometheus-fastapi-instrumentator
-requests
-openai
